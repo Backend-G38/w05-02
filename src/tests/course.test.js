@@ -1,5 +1,8 @@
+require('../models')
+
 const request = require("supertest")
 const app = require("../app");
+const Student = require('../models/Student');
 
 let courseId
 
@@ -27,10 +30,16 @@ test("Get '/courses' should return a statusCode 200", async () => {
 
   const res = await request(app)
     .get(BASE_URL)
+
+  // console.log(res.body);
+
   expect(res.status).toBe(200)
   expect(res.body).toBeDefined()
   // expect(res.body).toHaveLength(1)
   expect(res.body).toHaveLength(1)
+
+  expect(res.body[0].students).toBeDefined()
+  expect(res.body[0].students).toHaveLength(0)
 })
 
 test("GET -> '/courses/:id', should return status code 200, res.body to be defined and res.body.name === course.name", async () => {
@@ -38,15 +47,18 @@ test("GET -> '/courses/:id', should return status code 200, res.body to be defin
   const res = await request(app)
     .get(`${BASE_URL}/${courseId}`)
 
-  // console.log(res.body);
+  console.log(res.body);
 
   expect(res.status).toBe(200)
   expect(res.body).toBeDefined()
   expect(res.body.name).toBe(course.name)
 
+  expect(res.body.students).toBeDefined()
+  expect(res.body.students).toHaveLength(0)
+
 })
 
-test("PUT -> '/courses/:id', sholuld return status code 200, res.body.name ==== courseUpdate.name  ", async () => {
+test("PUT -> '/courses/:id', should return status code 200, res.body.name ==== courseUpdate.name  ", async () => {
 
   const courseUpdate = {
     name: "analisis",
@@ -62,6 +74,26 @@ test("PUT -> '/courses/:id', sholuld return status code 200, res.body.name ==== 
   expect(res.body.credits).toBe(courseUpdate.credits)
 })
 
+test("POST -> /BASE_URL/:id/students, should return code 200, and res.body.length === 1 ", async () => {
+  const student = {
+    firstName: 'Jairo',
+    lastName: 'Rincon',
+    birthday: '2024-08-15',
+    program: 'ing. software'
+  }
+  const createStudents = await Student.create(student)
+  const res = await request(app)
+    .post(`${BASE_URL}/${courseId}/students`)
+    .send([createStudents.id])
+  // console.log(res.body);
+  expect(res.status).toBe(200)
+  expect(res.body).toBeDefined()
+  expect(res.body).toHaveLength(1)
+  expect(res.body[0].id).toBeDefined()
+  expect(res.body[0].id).toBe(createStudents.id)
+  await createStudents.destroy()
+})
+
 test("Delete -> 'courses/:id', should return status code 204", async () => {
 
   const res = await request(app)
@@ -69,3 +101,4 @@ test("Delete -> 'courses/:id', should return status code 204", async () => {
 
   expect(res.statusCode).toBe(204)
 })
+
